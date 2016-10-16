@@ -1,10 +1,11 @@
 import bluetooth._bluetooth as bluez
-import time,os,serial,blescan,webbrowser
+import time,os,serial,blescan,webbrowser,requests
 from time import sleep
 import RPi.GPIO as GPIO
 from threading import Thread
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(22, GPIO.IN, pull_up_down = GPIO.PUD_UP)
+GPIO.setup(23, GPIO.IN, pull_up_down = GPIO.PUD_UP)
 GPIO.setup(27, GPIO.IN, pull_up_down = GPIO.PUD_UP)
 
 
@@ -108,16 +109,27 @@ class Demo:
 
 	def play_cur_vid(self):
 		self.proc = 3
-		last_read_tag = 0
+		playing = False
 		while(self.proc == 3):
 			time.sleep(.2)
 			if(GPIO.input(22) == False):	
 				os.system("pkill epiphany")
 				self.return_to_menu()
-			else:
+			elif(playing == False):
+				header = {
+					"Content-Type":"application/json",
+					"Accept":"application/json",
+					"AppKey":"1070406e-9e49-459f-81fc-b027c190576a"
+				}
 				print("make request")
-				#make request to thingworx off self.closet beacon
-				self.client.open(url,new=0)		
+				request_url = "http://52.55.219.115/Thingworx/Things/" + self.cur_beacon.name + "/Properties/Youtube_URL"
+				resp = requests.get(request_url,headers=header,verify=False)
+				print("resp",resp)
+				data = resp.json()
+				url = data['rows'][0]['Youtube_URL']
+				print("test:",url)
+				playing = True
+				self.client.open(url, new=0)
 
 
 	
@@ -142,19 +154,11 @@ class Demo:
 					if (data["MAC"] == beacon.mac and data['RSSI'] != 0):
 						beacon.rssi = data["RSSI"]
 						temp_list.append(beacon)
-			print(temp_list)
 			min_beacon = self.cur_beacon
-			print("geting min_beacon")
 			for beacon in temp_list:
-				print(beacon.rssi)
 				if(int(beacon.rssi) > int(min_beacon.rssi) and int(beacon.rssi) != 0):
 					min_beacon = beacon
-			
-			
 			self.cur_beacon = min_beacon
-			print("TESST")
-			print(self.cur_beacon.name)
-
 			self.update_menu()
 					
 	def update_ble_status(self, beacon):
@@ -169,32 +173,24 @@ class Demo:
 		self.update_menu()
 
 	def update_menu(self):
-		if(self.menu_i == 2):
-			self.menu_i =0
-		elif(self.menu_i == 1):
-			self.menu_i = 2
-		elif(self.menu_i == 0):
-			self.menu_i = 1
 		
 		os.system("clear")
-		print("TESST")
-		print(self.cur_beacon.name)
 
 		if(self.menu_i == 0):
 			print "Current Room: ", self.cur_beacon.name
-			print("->\t 1)Play Current Vid")
-			print("  \t 2)Run RFID")
-			print("  \t 3)Take Picture")
+			print("\t 1)Play Current Vid")
+			print("\t 2)Run RFID")
+			print("\t 3)Take Picture")
 		elif(self.menu_i == 1):
 			print "Current Room: ", self.cur_beacon.name
-			print("  \t 1)Play Current Vid")
-			print("->\t 2)Run RFID")
-			print("  \t 3)Take Picture")
+			print("\t 1)Play Current Vid")
+			print("\t 2)Run RFID")
+			print("\t 3)Take Picture")
 		elif(self.menu_i == 2):
 			print"Current Room: ", self.cur_beacon.name
-			print("  \t 1)Play Current Vid")
-			print("  \t 2)Run RFID")
-			print("->\t 3)Take Picture")
+			print("\t 1)Play Current Vid")
+			print("\t 2)Run RFID")
+			print("\t 3)Take Picture")
 demo = Demo()
 demo.picking = True
 demo.setup_beacons()
@@ -203,10 +199,12 @@ while demo.proc == 0:
 	time.sleep(.2);
 	demo.scan_ble()	
 	if demo.proc == 0:
-		if(GPIO.input(27) == False):	
-			demo.run_select()
-		if(GPIO.input(22) == False):
-			demo.update_menu()	
+		if(GPIO.input(22) == False):	
+			demo.play_cur_vid()
+		if(GPIO.input(23) == False):
+			demo.scan_rfid()	
+		if(GPIO.input(27) == False):
+			demo.take_pic()	
 		
 		
 
