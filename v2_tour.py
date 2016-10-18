@@ -121,13 +121,10 @@ class Demo:
 					"Accept":"application/json",
 					"AppKey":"1070406e-9e49-459f-81fc-b027c190576a"
 				}
-				print("make request")
 				request_url = "http://52.55.219.115/Thingworx/Things/" + self.cur_beacon.name + "/Properties/Youtube_URL"
 				resp = requests.get(request_url,headers=header,verify=False)
-				print("resp",resp)
 				data = resp.json()
 				url = data['rows'][0]['Youtube_URL']
-				print("test:",url)
 				playing = True
 				self.client.open(url, new=0)
 
@@ -175,22 +172,12 @@ class Demo:
 	def update_menu(self):
 		
 		os.system("clear")
+		print "Current Room: ", self.cur_beacon.name
+		print("\t 1)Play Current Vid")
+		print("\t 2)Run RFID")
+		print("\t 3)Take Picture")
 
-		if(self.menu_i == 0):
-			print "Current Room: ", self.cur_beacon.name
-			print("\t 1)Play Current Vid")
-			print("\t 2)Run RFID")
-			print("\t 3)Take Picture")
-		elif(self.menu_i == 1):
-			print "Current Room: ", self.cur_beacon.name
-			print("\t 1)Play Current Vid")
-			print("\t 2)Run RFID")
-			print("\t 3)Take Picture")
-		elif(self.menu_i == 2):
-			print"Current Room: ", self.cur_beacon.name
-			print("\t 1)Play Current Vid")
-			print("\t 2)Run RFID")
-			print("\t 3)Take Picture")
+
 demo = Demo()
 demo.picking = True
 demo.setup_beacons()
