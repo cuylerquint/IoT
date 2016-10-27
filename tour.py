@@ -15,7 +15,7 @@ class Demo:
 		self.menu_i = 2
 		self.picking = False
 		self.proc = 0
-		#self.ser = serial.Serial('/dev/ttyAMA0',9600, timeout = 1)
+		self.ser = serial.Serial('/dev/ttyS0',9600, timeout = 1)
 		self.client = webbrowser.get('epiphany')
 		self.cur_beacons = []
 		self.all_beacons = []
@@ -92,30 +92,35 @@ class Demo:
 				os.system("pkill epiphany")
 				self.return_to_menu()
 			else:
-				cur_RFID = str(self.ser.readline())
-				if(cur_RFID != last_read_tag and cur_RFID != ""):
-					last_read_tag = int(cur_RFID)
-					os.system("clear")
-					print "New Tag:" ,cur_RFID
-				else:
-					os.system("clear")
-					if(last_read_tag == 0):
-						print("Last Read Tag: None Read")
+				try:
+					cur_RFID = str(self.ser.readline())
+					if(cur_RFID != last_read_tag and cur_RFID != ''):
+						last_read_tag = int(cur_RFID)
+						os.system("clear")
+						print "New Tag:" ,cur_RFID
 					else:
-						print "Last Read Tag:" , last_read_tag
-						print "R for video"
-				if(GPIO.input(27) == False):
-					url = " "
-					if(last_read_tag == 76):
-						url = "http://www.youtube.com/watch_popup?v=JMCLmpUERSg"
-					elif(last_read_tag == 84):
-						url = "http://www.youtube.com/watch_popup?v=4T_Gs6YOO_8"
-					if(url == " "):
-						print("no tags have been read")
-					else:
-						self.client.open(url,new=0)		
-
-
+						os.system("clear")
+						if(last_read_tag == 0):
+							print("Last Read Tag: None Read")
+							print "Press 22 for menu"
+						else:
+							print "Last Read Tag:" , last_read_tag
+							print "Press 27 for video"
+							print "Press 22 for menu"
+					if(GPIO.input(27) == False):
+						url = " "
+						if(last_read_tag == 76):
+							url = "http://www.youtube.com/watch_popup?v=JMCLmpUERSg"
+						elif(last_read_tag == 84):
+							url = "http://www.youtube.com/watch_popup?v=4T_Gs6YOO_8"
+						if(url == " "):
+							print("no know tags have been read")
+						else:
+							self.client.open(url,new=0)		
+				except (serial.SerialException,ValueError) as e:
+					print "Serial connection error"
+					print e
+					os.system("clear")
 	def play_cur_vid(self):
 		self.proc = 3
 		playing = False
@@ -203,7 +208,7 @@ class Demo:
 		if(select):
 			print "Current Room: ", self.cur_beacon.name
 			print("\t 22)Play Current Vid")
-#			print("\t 2)Run RFID")
+			print("\t 23)Run RFID")
 			print("\t 27)Use Camera")
 		else:
 			print "Scanning..."
