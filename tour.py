@@ -117,7 +117,6 @@ class Demo:
 
 
 	def play_cur_vid(self):
-		print("test")
 		self.proc = 3
 		playing = False
 		while(self.proc == 3):
@@ -126,7 +125,6 @@ class Demo:
 				os.system("pkill epiphany")
 				self.return_to_menu()
 			elif(playing == False):
-				print("here")
 				header = {
 					"Content-Type":"application/json",
 					"Accept":"application/json",
@@ -134,16 +132,12 @@ class Demo:
 				}
 				request_url = "http://52.55.219.115/Thingworx/Things/" + self.cur_beacon.name + "/Properties/Youtube_URL"
 				resp = requests.get(request_url,headers=header,verify=False)
-				print(resp)
 				data = resp.json()
-				print(data)
 				url = data['rows'][0]['Youtube_URL']
-				print(url)
 				playing = True
 				self.client.open(url, new=0)
 
 	def scan_bl(self):
-		print("new scan v2")
 		sock = bluez.hci_open_dev(0)
 		blescan.hci_le_set_scan_parameters(sock)
 		blescan.hci_enable_le_scan(sock)
@@ -154,7 +148,7 @@ class Demo:
 			for beacon in returnedList:
 			
 				cur_scanned_beacons = []
-	#		print(beacon)
+		#		print(beacon)
 				beacon_parsed_list = beacon.split(',')
                			beacon_MAC = beacon_parsed_list[0]
                			beacon_RSSI = beacon_parsed_list[5]
@@ -189,43 +183,10 @@ class Demo:
 					print "cur" ,self.cur_beacon
 			beacon.temp_rssi_list = []
 
-		self.update_menu()
+		self.update_menu(1)
 	
 	
 	
-	def scan_ble(self):
-		print("new scan")
-		sock = bluez.hci_open_dev(0)
-		blescan.hci_le_set_scan_parameters(sock)
-		blescan.hci_enable_le_scan(sock)
-		returnedList = blescan.parse_events(sock, 15)
-		cur_scanned_beacons = []
-		for beacon in returnedList:
-	#		print(beacon)
-			beacon_parsed_list = beacon.split(',')
-               		beacon_MAC = beacon_parsed_list[0]
-               		beacon_RSSI = beacon_parsed_list[5]
-			temp_list = []
-			if(beacon_MAC in self.cur_macs):
-					cur_scanned_beacons.append({"MAC":beacon_MAC,"RSSI":beacon_RSSI})
-			
-			for beacon in self.cur_beacons:
-				for data in cur_scanned_beacons:
-					if (data["MAC"] == beacon.mac and data['RSSI'] != 0):
-						beacon.rssi = data["RSSI"]
-						temp_list.append(beacon)
-			if not temp_list:
-				self.cur_beacon = self.default
-				return
-			min_beacon = self.cur_beacon
-			print(temp_list)
-			for beacon in temp_list:
-		#		print beacon.name, beacon.rssi, min_beacon.rssi
-				if(int(beacon.rssi) > int(min_beacon.rssi) and int(beacon.rssi) != 0):
-					min_beacon = beacon
-		#	print(min_beacon.name)
-			self.cur_beacon = min_beacon
-			self.update_menu()
 					
 	def update_ble_status(self, beacon):
 		os.system("clear")
@@ -237,19 +198,23 @@ class Demo:
 		self.picking = True
 		self.update_menu()
 
-	def update_menu(self):
+	def update_menu(self,select):
 		os.system("clear")
-		print "Current Room: ", self.cur_beacon.name
-		print("\t 22)Play Current Vid")
-#		print("\t 2)Run RFID")
-		print("\t 27)Use Camera")
+		if(select):
+			print "Current Room: ", self.cur_beacon.name
+			print("\t 22)Play Current Vid")
+#			print("\t 2)Run RFID")
+			print("\t 27)Use Camera")
+		else:
+			print "Scanning..."
 demo = Demo()
 demo.picking = True
 #os.system("mount -t cifs -o domain=CENTRAL,user=quint1cd //141.209.189.107/demo /mnt")
 demo.setup_beacons()
-demo.update_menu()
+demo.update_menu(0)
 while demo.proc == 0:
 	if(demo.cur_beacon.id == 7):
+		demo.update_menu(0)
 		demo.scan_bl()
 	else:
 		clock_count = 0
@@ -263,10 +228,11 @@ while demo.proc == 0:
 			if(GPIO.input(27) == False):
 				demo.use_cam()	
 			clock_count += 1
+		clock_count = 0
+		demo.update_menu(0)
 		demo.scan_bl()
 
 
 demo.scan_ble()	
-			
 GPIO.cleanup()
 
